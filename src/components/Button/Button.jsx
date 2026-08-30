@@ -7,7 +7,7 @@ class Button extends Component {
   render() {
     return (
       <>
-        <button type="button">load more</button>
+        <button onClick={this.props.onClick} type="button">load more</button>
       </>
     );
   }
