@@ -1,14 +1,17 @@
 
-
 import { Component } from "react";
-
+import styles from "./Button.module.css";
 
 class Button extends Component {
   render() {
     return (
-      <>
-        <button onClick={this.props.onClick} type="button">load more</button>
-      </>
+      <button
+        className={styles.button}
+        onClick={this.props.onClick}
+        type="button"
+      >
+        Load more
+      </button>
     );
   }
 }

@@ -1,13 +1,21 @@
-import ImageGalleryItem from "../ImageGalleryItem/ImageGalleryItem";
+
 import { Component } from "react";
+import ImageGalleryItem from "../ImageGalleryItem/ImageGalleryItem";
+import styles from "./ImageGallery.module.css";
 
 class ImageGallery extends Component {
   render() {
+    const { imgs, onImageClick } = this.props;
+
     return (
-      <ul>
-        {this.props.imgs.map((imag) => {
-          return <ImageGalleryItem key={imag.id} img={imag} />;
-        })}
+      <ul className={styles.gallery}>
+        {imgs.map((img) => (
+          <ImageGalleryItem
+            key={img.id}
+            img={img}
+            onImageClick={onImageClick}
+          />
+        ))}
       </ul>
     );
   }

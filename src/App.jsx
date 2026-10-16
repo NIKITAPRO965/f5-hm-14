@@ -1,90 +1,137 @@
 
+import { Component } from "react";
+import Searchbar from "./components/Searchbar/Searchbar";
+import Loader from "./components/Loader/Loader";
+import Button from "./components/Button/Button";
+import ImageGallery from "./components/ImageGallery/ImageGallery";
+import Modal from "./components/Modal/Modal";
+import { fetchImages } from "./appi";
+import "./App.css";
 
-import { Component } from 'react'
-import Searchbar from './components/Searchbar/Searchbar'
-import Loader from './components/Loader/Loader'
-import Button from './components/Button/Button'
-import ImageGallery from './components/ImageGallery/ImageGallery'
-import { fetchImages } from './appi'
-import './App.css'
-
-class App extends Component{
-
+class App extends Component {
   state = {
     images: [],
     query: "",
     page: 1,
     loading: false,
     selectedImage: null,
+    error: "",
+  };
+
+  componentDidUpdate(_, prevState) {
+    const queryChanged = prevState.query !== this.state.query;
+    const pageChanged = prevState.page !== this.state.page;
+
+    if (queryChanged || pageChanged) {
+      this.loadImg();
+    }
   }
 
+  loadImg = async () => {
+    const { query, page } = this.state;
 
-  // componentDidMount(){
-  //   fetchImages("cat", page=1).then(res => console.log(res))
-  // }
+    if (!query.trim()) return;
 
-  componentDidUpdate(_,prevState) {
-    if(prevState.query!== this.state.query){
-      this.loadImg()
-    }
-    
-  } 
+    this.setState({ loading: true, error: "" });
 
+    try {
+      const data = await fetchImages(query, page);
 
-  loadImg = () => {
-    const {query, page} = this.state
-    if(!query) {
-      return
-    }
+      this.setState((prevState) => {
+        const newImages =
+          page === 1
+            ? data.hits
+            : [...prevState.images, ...data.hits];
 
-    this.setState({
-      loading: true
-    })
+        const uniqueImages = Array.from(
+          new Map(newImages.map((img) => [img.id, img])).values()
+        );
 
-    fetchImages(query, page).then((data) => {
-      this.setState((prev)=>({
-        images: [...prev.images, ...data.hits]
-      }))
-    }).finally(()=>{
+        return {
+          images: uniqueImages,
+        };
+      });
+    } catch (error) {
       this.setState({
-        loading: false
-      })
-    })
-
-  }
-
-  loadMore = () => {
-  this.setState((prev) => ({
-    page: prev.page+1
-  })),
-  ()=>{
-    this.loadImg()
-  }
-}
-
+        error: "Не вдалося завантажити зображення.",
+      });
+      console.error(error);
+    } finally {
+      this.setState({ loading: false });
+    }
+  };
 
   handleSearch = (query) => {
+    const normalizedQuery = query.trim();
+
+    if (!normalizedQuery) return;
+
+    if (normalizedQuery === this.state.query) {
+      this.setState({
+        page: 1,
+        images: [],
+      });
+      return;
+    }
+
     this.setState({
-      query: query,
+      query: normalizedQuery,
       images: [],
       page: 1,
-    })
-    
-  }
+      error: "",
+    });
+  };
+
+  loadMore = () => {
+    if (!this.state.loading) {
+      this.setState((prevState) => ({
+        page: prevState.page + 1,
+      }));
+    }
+  };
+
+  openModal = (image) => {
+    this.setState({ selectedImage: image });
+  };
+
+  closeModal = () => {
+    this.setState({ selectedImage: null });
+  };
 
   render() {
-console.log(this.state.images);
-// console.log(this.state.query);
+    const {
+      images,
+      loading,
+      selectedImage,
+      error,
+    } = this.state;
 
+    return (
+      <>
+        <Searchbar onSearch={this.handleSearch} />
 
-    return(<>    
-    <Searchbar onSearch={this.handleSearch}/>
-    {this.state.loading && <Loader />}
-    <ImageGallery imgs={this.state.images}/>
-    {this.state.images.length>0 && <Button onClick={this.loadMore}/>}
-    
-    </>)
+        {error && <p>{error}</p>}
+
+        <ImageGallery
+          imgs={images}
+          onImageClick={this.openModal}
+        />
+
+        {loading && <Loader />}
+
+        {images.length > 0 && !loading && (
+          <Button onClick={this.loadMore} />
+        )}
+
+        {selectedImage && (
+          <Modal
+            image={selectedImage}
+            onClose={this.closeModal}
+          />
+        )}
+      </>
+    );
   }
 }
 
-export default App
+export default App;
